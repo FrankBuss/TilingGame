@@ -8,7 +8,7 @@ import java.awt.Graphics2D
 import java.awt.RenderingHints
 import java.awt.BasicStroke
 
-class FieldComponent(field: Field) extends JComponent with MouseListener with MouseMotionListener {
+class GameComponent(game: Game) extends JComponent with MouseListener with MouseMotionListener {
   var scale = 1.0
   var ofs = Vector2d(0, 0)
 
@@ -39,7 +39,7 @@ class FieldComponent(field: Field) extends JComponent with MouseListener with Mo
     g2.fillRect(0, 0, w.toInt, h.toInt)
 
     // draw lines
-    val lines: List[Line] = field.getLines
+    val lines: List[Line] = game.getLines
     if (!lines.isEmpty) {
       // get boundary, with some margin
       val points = lines.flatMap(l => List(l.p1, l.p2))

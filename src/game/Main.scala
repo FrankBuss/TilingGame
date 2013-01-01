@@ -25,15 +25,16 @@ class Main extends JFrame("Tiling Game") {
 
   // add playfield to the center of the BorderLayout and button toolbar to the bottom
   getContentPane().setLayout(new BorderLayout())
-  val field = new Field()
+  val game = new Game()
+  game.newGame
 
-  getContentPane().add(BorderLayout.CENTER, new FieldComponent(field))
+  getContentPane().add(BorderLayout.CENTER, new GameComponent(game))
   val buttons = new JPanel(new GridLayout(1, 0))
   getContentPane().add(BorderLayout.SOUTH, buttons)
 
   // define toolbar buttons and anonymous callback functions for each button
   val buttonDefinitions = List(
-    ("New Game", () => field.newGame),
+    ("New Game", () => game.newGame),
     ("Help", () => {
       JOptionPane.showMessageDialog(this,
         "Tiling Game alpha test\n" +
@@ -65,14 +66,14 @@ class Main extends JFrame("Tiling Game") {
     def postProcessKeyEvent(e: KeyEvent): Boolean = {
       if (e.getID == KeyEvent.KEY_PRESSED) {
         e.getKeyCode match {
-          case KeyEvent.VK_UP => field.onUp
-          case KeyEvent.VK_DOWN => field.onDown
-          case KeyEvent.VK_LEFT => field.onLeft
-          case KeyEvent.VK_RIGHT => field.onRight
-          case KeyEvent.VK_1 => field.onButton1
-          case KeyEvent.VK_2 => field.onButton2
-          case KeyEvent.VK_3 => field.onButton3
-          case KeyEvent.VK_4 => field.onButton4
+          case KeyEvent.VK_UP => game.onUp
+          case KeyEvent.VK_DOWN => game.onDown
+          case KeyEvent.VK_LEFT => game.onLeft
+          case KeyEvent.VK_RIGHT => game.onRight
+          case KeyEvent.VK_1 => game.onButton1
+          case KeyEvent.VK_2 => game.onButton2
+          case KeyEvent.VK_3 => game.onButton3
+          case KeyEvent.VK_4 => game.onButton4
           case _ => {}
         }
       }

@@ -1,9 +1,8 @@
 package game
 
 class Polygon() {
-  // create polygon points from angles
-  def this(sideLength: Double, angles: List[Double]) = {
-    this()
+  // create polygon by length and angles
+  def init(sideLength: Double, angles: List[Double]) = {
     var direction = Vector2d(sideLength, 0)
     var start = Vector2d(0, 0)
     points = start :: points
@@ -14,7 +13,12 @@ class Polygon() {
     })
   }
 
-  // create polygon from points
+  def this(sideLength: Double, angles: List[Double]) = {
+    this()
+    init(sideLength, angles)
+  }
+
+  // create polygon by points
   def this(points: List[Vector2d]) = {
     this()
     this.points = points
@@ -49,10 +53,14 @@ class Polygon() {
 
   def render(intensity: Double) = {
     val renderedPoints = renderPoints()
-    for {
-      linePair <- (renderedPoints.last :: renderedPoints).zip(renderedPoints)
-      line = Line(linePair._1, linePair._2, intensity)
-    } yield line
+    if (renderedPoints.isEmpty) {
+      List[Line]()
+    } else {
+      for {
+        linePair <- (renderedPoints.last :: renderedPoints).zip(renderedPoints)
+        line = Line(linePair._1, linePair._2, intensity)
+      } yield line
+    }
   }
 
   def align(otherLine: Line, thisSide: Int) = {
