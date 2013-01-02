@@ -3,7 +3,7 @@ package game
 class CyclicTimer(cycleTimeMilliseconds: Int) {
   var lastTime: Long = 0
   var time: Long = 0
-  
+
   def update = {
     val t = System.currentTimeMillis()
     var delta = t - lastTime

@@ -42,10 +42,11 @@ class Main extends JFrame("Tiling Game") {
           "Code: Frank Buss\n" +
           "\n" +
           "First click in the field with the mouse, then use the keyboard:\n" +
-          "1: place current tile and add thin rhomb\n" +
-          "2: place current tile and add thick rhomb\n" +
-          "cursor up/down: rotate current tile\n" +
-          "cursor left/right: move current tile", "Tiling Game", JOptionPane.INFORMATION_MESSAGE);
+          "1: place current tile\n" +
+          "c/C: decrement/increment circle radius\n" +
+          "d/D: decrement/increment tile place delay\n" +
+          "cursor left/right: move current tile" +
+          "cursor up/down: rotate current tile", "Tiling Game", JOptionPane.INFORMATION_MESSAGE);
     }))
 
   // add toolbar buttons
@@ -64,18 +65,30 @@ class Main extends JFrame("Tiling Game") {
   // add global key event listener
   val pp = new KeyEventPostProcessor {
     def postProcessKeyEvent(e: KeyEvent): Boolean = {
-      if (e.getID == KeyEvent.KEY_PRESSED) {
-        e.getKeyCode match {
-          case KeyEvent.VK_UP => game.onUp
-          case KeyEvent.VK_DOWN => game.onDown
-          case KeyEvent.VK_LEFT => game.onLeft
-          case KeyEvent.VK_RIGHT => game.onRight
-          case KeyEvent.VK_1 => game.onButton1
-          case KeyEvent.VK_2 => game.onButton2
-          case KeyEvent.VK_3 => game.onButton3
-          case KeyEvent.VK_4 => game.onButton4
-          case _ => {}
+      e.getID match {
+        case KeyEvent.KEY_PRESSED => {
+          e.getKeyCode match {
+            case KeyEvent.VK_UP => game.onUp
+            case KeyEvent.VK_DOWN => game.onDown
+            case KeyEvent.VK_LEFT => game.onLeft
+            case KeyEvent.VK_RIGHT => game.onRight
+            case KeyEvent.VK_1 => game.onButton1
+            case KeyEvent.VK_2 => game.onButton2
+            case KeyEvent.VK_3 => game.onButton3
+            case KeyEvent.VK_4 => game.onButton4
+            case _ => {}
+          }
         }
+        case KeyEvent.KEY_TYPED => {
+          e.getKeyChar() match {
+            case 'C' => game.changeCircleSize(1)
+            case 'c' => game.changeCircleSize(-1)
+            case 'D' => game.changeDelay(1)
+            case 'd' => game.changeDelay(-1)
+            case _ => {}
+          }
+        }
+        case _ => {}
       }
       true
     }

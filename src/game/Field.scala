@@ -9,6 +9,9 @@ class Field {
   var tilesLines = List[Line]()
 
   def updateLines = {
+    outlineLines = List[Line]()
+    tilesLines = List[Line]()
+
     // collect all lines from all tiles
     val lines = tiles.flatMap(tile => tile.render)
 
@@ -16,12 +19,10 @@ class Field {
     val partition = lines.groupBy(line => lines.count(line2 => line2.isCoincident(line)) > 1)
 
     // update lines, without duplicate lines
-    if (partition.contains(true)) {
+    if (partition.contains(true))
       tilesLines = partition(true).distinct
-    }
-    if (partition.contains(false)) {
+    if (partition.contains(false))
       outlineLines = partition(false).distinct
-    }
 
     // sort outline lines: the start of a line should be the same as end of another line, if possible
     // because for the movement of the new tile at the outline
@@ -63,14 +64,15 @@ class Field {
     updateLines
   }
 
-  def getLines: List[Line] = {
+  def getLines(dimmed: Boolean): List[Line] = {
     var list = List[Line]()
+    val scale = if (dimmed) 0.4; else 1;
 
     // draw tiles
-    list ++= tilesLines.map(line => Line(line.p1, line.p2, 0.4))
+    list ++= tilesLines.map(line => Line(line.p1, line.p2, 0.4 * scale))
 
     // draw outline
-    list ++= outlineLines.map(line => Line(line.p1, line.p2, 1.0))
+    list ++= outlineLines.map(line => Line(line.p1, line.p2, 1.0 * scale))
 
     list
   }

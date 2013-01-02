@@ -1,6 +1,30 @@
 package game
 
+import scala.math._
+
 class Polygon() {
+  var renderedPoints = List[Vector2d]()
+  var rendered = List[Line]()
+  var boundingBoxCache: Rectangle = null
+  var lastIntensity: Double = -1
+
+  def boundingBox: Rectangle = {
+    if (boundingBoxCache == null) {
+      var minx = Double.MaxValue
+      var miny = Double.MaxValue
+      var maxx = Double.MinValue
+      var maxy = Double.MinValue
+      renderedPoints.foreach(p => {
+        minx = min(minx, p.x)
+        miny = min(miny, p.y)
+        maxx = max(maxx, p.x)
+        maxy = max(maxy, p.y)
+      })
+      boundingBoxCache = new Rectangle(Vector2d(minx, miny), Vector2d(maxx, maxy))
+    }
+    boundingBoxCache
+  }
+
   // create polygon by length and angles
   def init(sideLength: Double, angles: List[Double]) = {
     var direction = Vector2d(sideLength, 0)
@@ -47,20 +71,28 @@ class Polygon() {
     rotated
   }
 
-  def renderPoints(): List[Vector2d] = points.map(p => p.rotate(rotation) + position)
+  def renderPoints(): List[Vector2d] = {
+    if (renderedPoints.isEmpty)
+      renderedPoints = points.map(p => p.rotate(rotation) + position)
+    renderedPoints
+  }
 
   def render(): List[Line] = render(1)
 
   def render(intensity: Double) = {
-    val renderedPoints = renderPoints()
-    if (renderedPoints.isEmpty) {
-      List[Line]()
-    } else {
-      for {
-        linePair <- (renderedPoints.last :: renderedPoints).zip(renderedPoints)
-        line = Line(linePair._1, linePair._2, intensity)
-      } yield line
+    if (lastIntensity != intensity || rendered.isEmpty) {
+      lastIntensity = intensity
+      val renderedPoints = renderPoints()
+      rendered = if (renderedPoints.isEmpty) {
+        List[Line]()
+      } else {
+        for {
+          linePair <- (renderedPoints.last :: renderedPoints).zip(renderedPoints)
+          line = Line(linePair._1, linePair._2, intensity)
+        } yield line
+      }
     }
+    rendered
   }
 
   def align(otherLine: Line, thisSide: Int) = {
@@ -80,8 +112,10 @@ class Polygon() {
   // using the Separating Axis Theorem
   def intersects(other: Polygon): Boolean = {
     val lines1 = render()
-    val points1 = lines1.map(line => line.p1)
     val lines2 = other.render()
+    if (!boundingBox.intersects(other.boundingBox))
+      return false
+    val points1 = lines1.map(line => line.p1)
     val points2 = lines2.map(line => line.p1)
 
     // calculate min/max of the projection of all points to vector p
@@ -119,6 +153,12 @@ class Polygon() {
 
     // polygon intersection, if not axis of lines1 and not axis of lines2 exists
     intersectsImpl(lines1, points1, lines2, points2) && intersectsImpl(lines2, points2, lines1, points1)
+  }
+
+  def isCoincident(other: Polygon) = {
+    val lines1 = render()
+    val lines2 = other.render()
+    lines1.forall(line1 => lines2.exists(line2 => line1.isCoincident(line2)))
   }
 
   def center = {

@@ -1,6 +1,7 @@
 package game
 
 import scala.math._
+import scala.util._
 
 class Game {
   var field = new Field
@@ -8,34 +9,69 @@ class Game {
   var currentTileSide = 0
   var outlineLineIndex = 0
   var blinkingTimer = new CyclicTimer(1000)
+  var score: Int = 0
+  var delay: Int = 5
+  var circle = new Polygon(1, List.fill(36)(10)).move(Vector2d(0, -4))
+  var circleSize: Int = 5
+  var gameOver = false
+  var tileTimeStart: Long = 0
 
-  def onUp = {
-    currentTileSide += 1
-    if (currentTileSide >= currentTile.points.length)
-      currentTileSide = 0
-    updateCurrentTile
+  def updateCircle = {
+    circle = new Polygon(circleSize.toDouble / 5, List.fill(36)(10))
+    circle.render
+    val boundingBox = circle.boundingBox
+    circle = circle.move(Vector2d(0, (boundingBox.top - boundingBox.bottom) / 2 + 2))
+  }
+  updateCircle
+
+  def wrap(value: Int, max: Int) = {
+    if (value < 0) {
+      max - 1
+    } else if (value >= max) {
+      0
+    } else {
+      value
+    }
   }
 
-  def onDown = {
-    currentTileSide -= 1
-    if (currentTileSide < 0)
-      currentTileSide = currentTile.points.length - 1
+  def onUpDown(ofs: Int, loop: Boolean): Unit = {
+    if (gameOver) return
+    currentTileSide = wrap(currentTileSide + ofs, currentTile.points.length)
     updateCurrentTile
+    if (loop) {
+      if (intersects) onUpDown(ofs, true)
+    }
   }
 
-  def onLeft = {
-    outlineLineIndex += 1
-    if (outlineLineIndex >= field.outlineLines.length)
-      outlineLineIndex = 0
-    updateCurrentTile
+  def onUp = onUpDown(-1, true)
+
+  def onDown = onUpDown(1, true)
+
+  def onLeftRight(ofs: Int): Unit = {
+    if (gameOver) return
+    val lastCurrentTile = currentTile
+    def onLeftRightImpl(ofs: Int): Unit = {
+      outlineLineIndex = wrap(outlineLineIndex + ofs, field.outlineLines.length)
+      updateCurrentTile
+      if (intersects) {
+        def upDownTest(): Unit = {
+          for (i <- 0 until currentTile.points.length) {
+            onUpDown(1, false)
+            if (!intersects)
+              return
+          }
+        }
+        upDownTest
+      }
+      if (intersects || lastCurrentTile.isCoincident(currentTile))
+        onLeftRightImpl(ofs)
+    }
+    onLeftRightImpl(ofs)
   }
 
-  def onRight = {
-    outlineLineIndex -= 1
-    if (outlineLineIndex < 0)
-      outlineLineIndex = field.outlineLines.length - 1
-    updateCurrentTile
-  }
+  def onLeft = onLeftRight(1)
+
+  def onRight = onLeftRight(-1)
 
   def updateCurrentTile = {
     currentTile = currentTile.align(field.outlineLines(outlineLineIndex), currentTileSide)
@@ -43,20 +79,31 @@ class Game {
 
   def intersects = field.tiles.exists(tile => currentTile.intersects(tile))
 
-  def addTile(tile: Tile) = {
-    if (!intersects) {
-      field.addTile(currentTile)
-      currentTile = tile
+  def addRandomNewTile = {
+    if (currentTile.intersects(circle)) {
+      if (scala.util.Random.nextInt(2) == 1) {
+        currentTile = ThinRhombTile
+      } else {
+        currentTile = ThickRhombTile
+      }
       updateCurrentTile
+      onLeft
+    } else {
+      gameOver = true
     }
+    tileTimeStart = System.currentTimeMillis()
   }
 
   def onButton1 = {
-    addTile(ThinRhombTile)
+    if (!intersects && !gameOver) {
+      field.addTile(currentTile)
+      addRandomNewTile
+      score += 1
+    }
   }
 
   def onButton2 = {
-    addTile(ThickRhombTile)
+
   }
 
   def onButton3 = {
@@ -67,21 +114,37 @@ class Game {
 
   }
 
+  def changeCircleSize(ofs: Int) = {
+    circleSize += ofs;
+    if (circleSize > 5) circleSize = 5
+    if (circleSize < 1) circleSize = 1
+    updateCircle
+  }
+
+  def changeDelay(ofs: Int) = {
+    delay += ofs
+    if (delay > 5) delay = 5
+    if (delay < 1) delay = 1
+  }
+
   def newGame = {
-    val r1 = ThickRhombTile
-    val r2 = ThickRhombTile.align(r1.render()(1), 0)
-    val r3 = ThickRhombTile.align(r2.render()(3), 0)
-    val r4 = ThickRhombTile.align(r3.render()(3), 0)
-    field.tiles = List(r1, r2, r3, r4)
+    gameOver = false
+    field.tiles = List(ThickRhombTile.move(Vector2d(0, 1)))
     field.updateLines
-    currentTileSide = 1
-    outlineLineIndex = 7
-    currentTile = ThinRhombTile
-    updateCurrentTile
+    currentTileSide = 0
+    outlineLineIndex = 0
+    score = 1
+    currentTile = ThickRhombTile
+    addRandomNewTile
   }
 
   def getLines: List[Line] = {
-    var list = field.getLines
+    val time = System.currentTimeMillis()
+    if (!gameOver && time - tileTimeStart > delay * 1000) {
+      onButton1
+    }
+
+    var list = field.getLines(gameOver)
 
     blinkingTimer.update
     val blinkColor = abs(blinkingTimer.time.toDouble - 500) / 500
@@ -92,7 +155,21 @@ class Game {
         list ::= Line(lines(1).p1, lines(3).p1, blinkColor)
       }
     }
-    list ++= lines
+    if (gameOver) {
+      list ++= HersheyFont.drawString("Game", -4, 1, 0.1)
+      list ++= HersheyFont.drawString("Over", -3, 4, 0.1)
+    } else {
+      list ++= lines
+    }
+
+    list ++= HersheyFont.drawString("Score: " + score, -5, 8.5, 0.04)
+    list ++= HersheyFont.drawString("Delay: " + delay, -5, 10, 0.04)
+    list ++= HersheyFont.drawString("Circle: " + circleSize, 1, 10, 0.04)
+
+    list ++= circle.render
+
+    val rect = new Rectangle(Vector2d(-6, -5), Vector2d(7, 11))
+    list ++= rect.render
 
     list
   }
