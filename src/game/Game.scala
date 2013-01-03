@@ -81,15 +81,18 @@ class Game {
 
   def addRandomNewTile = {
     if (currentTile.intersects(circle)) {
-      if (scala.util.Random.nextInt(2) == 1) {
+      if (Random.nextInt(2) == 1) {
         currentTile = ThinRhombTile
       } else {
         currentTile = ThickRhombTile
       }
+      outlineLineIndex = 0
       updateCurrentTile
       onLeft
+      blinkingTimer.reset
     } else {
       gameOver = true
+      AudioOutput.gameOver
     }
     tileTimeStart = System.currentTimeMillis()
   }
@@ -99,6 +102,7 @@ class Game {
       field.addTile(currentTile)
       addRandomNewTile
       score += 1
+      AudioOutput.clack
     }
   }
 

@@ -17,4 +17,6 @@ class CyclicTimer(cycleTimeMilliseconds: Int) {
     time += delta
     if (time > cycleTimeMilliseconds) time -= cycleTimeMilliseconds
   }
+
+  def reset = lastTime = System.currentTimeMillis()
 }

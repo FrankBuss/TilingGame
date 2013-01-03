@@ -1,0 +1,52 @@
+<project name="TilingGame" default="build" basedir=".">
+	<property environment="env"/>
+	<property name="sources.dir" value="src" />
+	<property name="build.dir" value="build" />
+
+	<!-- set the environment variable to the scala home, e.g. SCALA_HOME="C:\Program Files (x86)\scala" -->
+	<property name="scala.home"  location="${env.SCALA_HOME}"/>
+
+	<!-- include Scala ant task -->
+	<target name="init">
+		<property
+			name="scala-library.jar"
+			value="${scala.home}/lib/scala-library.jar"
+		/>
+		<property
+			name="scala-swing.jar"
+			value="${scala.home}/lib/scala-swing.jar"
+		/>
+		<path id="build.classpath">
+			<pathelement location="${scala-library.jar}"   />
+			<!--<pathelement location="${your.path}"   />-->
+			<pathelement location="${build.dir}"   />
+		</path>
+		<taskdef resource="scala/tools/ant/antlib.xml">
+			<classpath>
+				<pathelement location="${scala.home}/lib/scala-compiler.jar"   />
+				<pathelement location="${scala-library.jar}"   />
+			</classpath>
+		</taskdef>
+	</target>
+
+	<!-- build and create jar -->
+	<target name="build" depends="init">
+		<!-- create new emtpy build directory -->
+		<delete dir="build"/>
+		<mkdir dir="${build.dir}"   />
+		<!-- build *.scala files -->
+		<scalac srcdir="${sources.dir}"
+			destdir="${build.dir}"
+			classpathref="build.classpath">
+			<include name="**/*.scala"   />
+		</scalac>
+		<!-- build *.java helper files -->
+		<javac includeantruntime="false" destdir="build" srcdir="src" debug="true" classpath="${scala-library.jar}" target="1.5" source="1.5" />
+		<!-- extract Scala JAR files to build directory -->
+		<unjar src="${scala-library.jar}" dest="build" />
+		<unjar src="${scala-swing.jar}" dest="build" />
+		<delete dir="build/META-INF"/>
+		<!-- create jar file -->
+		<jar basedir="build" jarfile="TilingGame.jar" manifest="MANIFEST.MF"></jar>
+	</target>
+</project>

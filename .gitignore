@@ -1,5 +1,8 @@
 bin
+build
+*.jar
 .cache
 Thumbs.db
 .DS_Store
 *.bak
+build.cmd
